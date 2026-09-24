@@ -16,10 +16,17 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: JWT_SECRET
-        sync: false
+        generateValue: true
       - key: CORS_ORIGIN
         sync: false
       - key: PUBLIC_BASE_URL
         sync: false
       - key: LOW_MARGIN_THRESHOLD_PERCENT
+        value: "20"
+      # El seed corre solo al arrancar (idempotente) si estas 3 existen; pégalas en el panel.
+      - key: SEED_ADMIN_PASSWORD
+        sync: false
+      - key: SEED_OPERARIO_PASSWORD
+        sync: false
+      - key: SEED_DUENO_PASSWORD
         sync: false
