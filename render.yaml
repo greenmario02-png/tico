@@ -1,0 +1,25 @@
+# Blueprint de Render (plan gratuito); asume que la raíz del repo es app/. Las variables con sync:false se
+# piden/rellenan en el panel de Render; NUNCA pongas valores reales aquí.
+services:
+  - type: web
+    name: panaderia-backend
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm ci --include=dev && npm run build
+    # Aplica migraciones (idempotentes) y arranca. El plan free no tiene preDeployCommand.
+    startCommand: npm run start:render
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: PUBLIC_BASE_URL
+        sync: false
+      - key: LOW_MARGIN_THRESHOLD_PERCENT
+        sync: false

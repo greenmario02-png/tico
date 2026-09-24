@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS "suppliers_active_name_lower_unique" ON "suppliers" USING btree (lower("name")) WHERE "suppliers"."is_active" = true;

@@ -1,0 +1,179 @@
+@import "tailwindcss";
+@import "material-symbols/outlined.css";
+
+/*
+ * Paleta de diseño (SDD-08 redesign): cálida, con acento ámbar/marrón
+ * (inspirada en el mockup de referencia de Stitch), coherente en modo claro
+ * y oscuro. El tema activo se controla con el atributo `data-theme` en
+ * <html> (ver src/lib/theme-context.tsx e index.html para el valor inicial),
+ * no con `prefers-color-scheme` directamente — eso solo decide el valor por
+ * defecto la primera vez que alguien visita la app.
+ */
+
+@theme {
+  --color-border: hsl(30 20% 88%);
+  --color-input: hsl(30 20% 88%);
+  --color-ring: hsl(28 75% 45%);
+
+  --color-background: hsl(36 40% 97%);
+  --color-foreground: hsl(24 30% 14%);
+
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(24 30% 14%);
+
+  --color-primary: hsl(28 75% 45%);
+  --color-primary-foreground: hsl(36 40% 98%);
+
+  --color-secondary: hsl(30 25% 92%);
+  --color-secondary-foreground: hsl(24 30% 18%);
+
+  --color-accent: hsl(30 30% 91%);
+  --color-accent-foreground: hsl(24 30% 16%);
+
+  --color-muted: hsl(30 20% 93%);
+  --color-muted-foreground: hsl(25 12% 42%);
+
+  --color-destructive: hsl(0 72% 48%);
+  --color-destructive-foreground: hsl(0 0% 98%);
+
+  --color-warning: hsl(38 92% 50%);
+  --color-warning-foreground: hsl(24 40% 12%);
+
+  --color-success: hsl(142 60% 32%);
+  --color-success-foreground: hsl(0 0% 98%);
+
+  --color-sidebar: hsl(24 35% 12%);
+  --color-sidebar-foreground: hsl(36 30% 92%);
+  --color-sidebar-accent: hsl(28 60% 22%);
+  --color-sidebar-accent-foreground: hsl(36 40% 96%);
+  --color-sidebar-border: hsl(24 30% 20%);
+  --color-sidebar-muted: hsl(30 15% 65%);
+}
+
+:root[data-theme="dark"] {
+  --color-border: hsl(24 20% 20%);
+  --color-input: hsl(24 20% 22%);
+  --color-ring: hsl(32 85% 55%);
+
+  --color-background: hsl(22 22% 8%);
+  --color-foreground: hsl(36 30% 94%);
+
+  --color-card: hsl(22 20% 11%);
+  --color-card-foreground: hsl(36 30% 94%);
+
+  --color-primary: hsl(32 85% 55%);
+  --color-primary-foreground: hsl(22 30% 10%);
+
+  --color-secondary: hsl(24 18% 16%);
+  --color-secondary-foreground: hsl(36 25% 90%);
+
+  --color-accent: hsl(24 20% 18%);
+  --color-accent-foreground: hsl(36 30% 94%);
+
+  --color-muted: hsl(24 16% 16%);
+  --color-muted-foreground: hsl(30 12% 65%);
+
+  --color-destructive: hsl(0 65% 55%);
+  --color-destructive-foreground: hsl(0 0% 98%);
+
+  --color-warning: hsl(38 92% 55%);
+  --color-warning-foreground: hsl(24 40% 10%);
+
+  --color-success: hsl(142 50% 45%);
+  --color-success-foreground: hsl(22 30% 10%);
+
+  --color-sidebar: hsl(22 26% 7%);
+  --color-sidebar-foreground: hsl(36 25% 90%);
+  --color-sidebar-accent: hsl(28 55% 20%);
+  --color-sidebar-accent-foreground: hsl(36 40% 96%);
+  --color-sidebar-border: hsl(24 20% 16%);
+  --color-sidebar-muted: hsl(30 12% 55%);
+}
+
+body {
+  @apply bg-background text-foreground;
+}
+
+/* Ajuste fino de línea base del glifo de Material Symbols dentro de flujos
+   de texto en línea (botones, badges, celdas de tabla). */
+.material-symbols-outlined {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+/* ---------------------------------------------------------------
+ * Identidad visual: animaciones (todas respetan prefers-reduced-motion,
+ * ver bloque al final).
+ * ------------------------------------------------------------- */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes mascot-breathe {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(3px); }
+}
+@keyframes mascot-blink {
+  0%, 92%, 100% { transform: scaleY(0); }
+  95%, 97% { transform: scaleY(1); }
+}
+@keyframes loaf-bob {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-4px) rotate(2deg); }
+}
+
+.anim-page-enter { animation: page-enter 180ms ease-out both; }
+.anim-fade-up { animation: fade-up 400ms ease-out both; animation-delay: var(--delay, 0ms); }
+.anim-float { animation: float-slow 6s ease-in-out infinite; }
+
+/* Tarjetas de módulo: elevación sutil al pasar el mouse. */
+.lift { transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease, background-color 150ms ease; }
+.lift:hover { transform: translateY(-3px); box-shadow: 0 8px 20px -10px hsl(24 40% 20% / 0.35); }
+button:not(:disabled):active, a[data-testid^="nav-"]:active { transform: scale(0.98); }
+
+/* --- Mascota panadero --- */
+.mascot * { transform-box: fill-box; }
+.mascot .m-body { animation: mascot-breathe 4s ease-in-out infinite; transform-box: view-box; }
+.mascot .m-lid { transform-origin: center top; transform: scaleY(0); animation: mascot-blink 5s infinite; }
+.mascot .m-hand, .mascot .m-loaf, .mascot .m-pupil {
+  transition: transform 320ms cubic-bezier(0.4, 0, 0.2, 1), opacity 260ms ease;
+  transform-box: view-box; transform-origin: 0 0;
+}
+.mascot .m-loaf-inner { transform-box: fill-box; transform-origin: center; animation: loaf-bob 3.6s ease-in-out infinite; }
+/* Posiciones (unidades del viewBox) de las manos */
+.mascot .m-hand-l { transform: translate(58px, 226px) rotate(-8deg); }
+.mascot .m-hand-r { transform: translate(206px, 150px) rotate(8deg); }
+.mascot .m-loaf { transform: translate(0, 0); opacity: 1; }
+.mascot[data-state="coverEyes"] .m-hand-l,
+.mascot[data-state="peek"] .m-hand-l { transform: translate(104px, 133px) rotate(24deg); }
+.mascot[data-state="coverEyes"] .m-hand-r { transform: translate(156px, 133px) rotate(-24deg); }
+.mascot[data-state="peek"] .m-hand-r { transform: translate(170px, 104px) rotate(-30deg); }
+.mascot[data-state="coverEyes"] .m-loaf,
+.mascot[data-state="peek"] .m-loaf { opacity: 0; transform: translate(-30px, 40px) scale(0.4); }
+.mascot[data-state="peek"] .m-pupil { transform: translate(2px, 0); }
+.mascot[data-state="coverEyes"] .m-lid, .mascot[data-state="peek"] .m-lid { animation: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-page-enter, .anim-fade-up, .anim-float,
+  .mascot .m-body, .mascot .m-lid, .mascot .m-loaf-inner { animation: none !important; }
+  .mascot .m-hand, .mascot .m-loaf, .mascot .m-pupil, .lift { transition: none !important; }
+  .lift:hover { transform: none; }
+}
+
+/* Entrada escalonada de las tarjetas de estadísticas del dashboard. */
+.dashboard-stats > * { animation: fade-up 400ms ease-out both; }
+.dashboard-stats > *:nth-child(2) { animation-delay: 50ms; }
+.dashboard-stats > *:nth-child(3) { animation-delay: 100ms; }
+.dashboard-stats > *:nth-child(4) { animation-delay: 150ms; }
+.dashboard-stats > *:nth-child(5) { animation-delay: 200ms; }
+@media (prefers-reduced-motion: reduce) { .dashboard-stats > * { animation: none !important; } }

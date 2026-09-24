@@ -1,0 +1,42 @@
+# Node
+node_modules/
+dist/
+build/
+coverage/
+*.log
+*.tsbuildinfo
+
+# Entornos y secretos
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# Postgres de desarrollo local
+.devpgdata/
+.devpgdata.*
+.devpg_log.txt
+.dev_server.log
+
+# Cypress
+web/cypress/videos/
+web/cypress/screenshots/
+web/cypress/downloads/
+
+# Flutter / Dart
+mobile/.dart_tool/
+mobile/build/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.packages
+mobile/.pub-cache/
+mobile/.pub/
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/ios/Pods/
+
+# SO / editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

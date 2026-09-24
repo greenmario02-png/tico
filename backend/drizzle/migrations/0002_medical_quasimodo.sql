@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX IF NOT EXISTS "ingredients_active_name_lower_unique" ON "ingredients" USING btree (lower("name")) WHERE "ingredients"."is_active" = true;--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "recipes_active_name_lower_unique" ON "recipes" USING btree (lower("name")) WHERE "recipes"."is_deleted" = false;
