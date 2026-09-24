@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { config } from "../lib/config";
 import { db, pool } from "./client";
 import {
@@ -818,6 +818,18 @@ async function main() {
     }
     await db.insert(products).values({ recipeId, name: r.name, salePrice: r.productSalePrice });
     console.log(`Producto creado: ${r.name} — precio venta Bs ${r.productSalePrice}`);
+  }
+
+  // Repara imageUrl locales sembradas con otra PUBLIC_BASE_URL (p. ej. tras corregir la variable).
+  const base = config.publicBaseUrl;
+  for (const table of ["recipes", "ingredients"]) {
+    const res = await db.execute(
+      sql.raw(
+        `UPDATE ${table} SET image_url = '${base.replace(/'/g, "''")}' || substring(image_url from '/images/.*') ` +
+          `WHERE image_url LIKE '%/images/%' AND image_url NOT LIKE '${base.replace(/'/g, "''")}/images/%'`,
+      ),
+    );
+    console.log(`imageUrl reparadas en ${table}: ${res.rowCount ?? 0}`);
   }
 
   console.log("Seed de producción completo.");
