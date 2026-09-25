@@ -50,9 +50,12 @@ export interface AppConfig {
    * Default 20 — mismo valor de ejemplo usado en SDD-07 CU6/SDD-03 §6.2.
    */
   lowMarginThresholdPercent: number;
-  /** Cotización oficial BCB (valores fijos configurables) — GET /api/exchange-rate. */
-  officialUsdBuy: string;
-  officialUsdSell: string;
+  /** Rate limiting progresivo de login (ver services/loginThrottle.ts). */
+  loginThrottleBaseSeconds: number;
+  loginThrottleMaxSeconds: number;
+  loginIpLimitPerMinute: number;
+  /** true detrás de proxy (Render): request.ip sale de X-Forwarded-For. */
+  trustProxy: boolean;
   /** TTL (minutos) de la caché en memoria de la cotización paralela (Binance P2P). */
   exchangeRateTtlMinutes: number;
 }
@@ -81,9 +84,11 @@ export function loadConfig(): AppConfig {
     corsOrigin,
     publicBaseUrl: optionalEnv("PUBLIC_BASE_URL", `http://localhost:${port}`),
     lowMarginThresholdPercent: Number(optionalEnv("LOW_MARGIN_THRESHOLD_PERCENT", "20")),
-    officialUsdBuy: optionalEnv("OFFICIAL_USD_BUY", "6.86"),
-    officialUsdSell: optionalEnv("OFFICIAL_USD_SELL", "6.96"),
-    exchangeRateTtlMinutes: Number(optionalEnv("EXCHANGE_RATE_TTL_MINUTES", "10")),
+    loginThrottleBaseSeconds: Number(optionalEnv("LOGIN_THROTTLE_BASE_SECONDS", "5")),
+    loginThrottleMaxSeconds: Number(optionalEnv("LOGIN_THROTTLE_MAX_SECONDS", "900")),
+    loginIpLimitPerMinute: Number(optionalEnv("LOGIN_IP_LIMIT_PER_MINUTE", "20")),
+    trustProxy: optionalEnv("TRUST_PROXY", "false").toLowerCase() === "true",
+    exchangeRateTtlMinutes: Number(optionalEnv("EXCHANGE_RATE_TTL_MINUTES", "5")),
   };
 }
 

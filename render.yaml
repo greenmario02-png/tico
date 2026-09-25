@@ -23,12 +23,16 @@ services:
         sync: false
       - key: LOW_MARGIN_THRESHOLD_PERCENT
         value: "20"
-      - key: OFFICIAL_USD_BUY
-        value: "6.86"
-      - key: OFFICIAL_USD_SELL
-        value: "6.96"
+      - key: TRUST_PROXY
+        value: "true"
+      - key: LOGIN_THROTTLE_BASE_SECONDS
+        value: "5"
+      - key: LOGIN_THROTTLE_MAX_SECONDS
+        value: "900"
+      - key: LOGIN_IP_LIMIT_PER_MINUTE
+        value: "20"
       - key: EXCHANGE_RATE_TTL_MINUTES
-        value: "10"
+        value: "5"
       # El seed corre solo al arrancar (idempotente) si estas 3 existen; pégalas en el panel.
       - key: SEED_ADMIN_PASSWORD
         sync: false

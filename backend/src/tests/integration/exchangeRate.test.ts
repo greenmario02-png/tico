@@ -12,13 +12,13 @@ describe("GET /api/exchange-rate (público)", () => {
     });
     const app = Fastify();
     await app.register(exchangeRateRoutes, {
-      service: createExchangeRateService({ officialBuy: "6.86", officialSell: "6.96", ttlMinutes: 10, fetchFn }),
+      service: createExchangeRateService({ ttlMinutes: 10, fetchFn }),
     });
     const res = await app.inject({ method: "GET", url: "/api/exchange-rate" });
     expect(res.statusCode).toBe(200);
     const b = res.json();
     expect(b.currency).toBe("USD");
-    expect(b.official).toEqual({ buy: "6.86", sell: "6.96", source: "BCB (oficial)" });
+    expect(b.official).toBeUndefined();
     expect(b.parallel).toEqual({ buy: "10.05", sell: "9.50", source: "Binance P2P (USDT/BOB)" });
     expect(b.stale).toBe(false);
     expect(typeof b.updatedAt).toBe("string");
@@ -30,7 +30,7 @@ describe("GET /api/exchange-rate (público)", () => {
     });
     const app = Fastify();
     await app.register(exchangeRateRoutes, {
-      service: createExchangeRateService({ officialBuy: "6.86", officialSell: "6.96", ttlMinutes: 10, fetchFn }),
+      service: createExchangeRateService({ ttlMinutes: 10, fetchFn }),
     });
     const res = await app.inject({ method: "GET", url: "/api/exchange-rate" });
     expect(res.statusCode).toBe(200);

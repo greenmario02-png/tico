@@ -8,7 +8,7 @@ function binance(buy: string[], sell: string[]) {
     return new Response(JSON.stringify({ data: prices.map((price) => ({ adv: { price } })) }), { status: 200 });
   });
 }
-const base = { officialBuy: "6.86", officialSell: "6.96", ttlMinutes: 10 };
+const base = { ttlMinutes: 10 };
 
 describe("exchangeRateService", () => {
   it("mediana ignora outliers", () => {
@@ -52,7 +52,7 @@ describe("exchangeRateService", () => {
     const fetchFn = vi.fn(async () => new Response("x", { status: 500 }));
     const r = await createExchangeRateService({ ...base, fetchFn }).getRate();
     expect(r.parallel).toBeNull();
-    expect(r.official.buy).toBe("6.86");
+    expect((r as unknown as Record<string, unknown>).official).toBeUndefined();
     expect(r.stale).toBe(false);
   });
 });

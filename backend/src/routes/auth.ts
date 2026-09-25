@@ -4,7 +4,9 @@ import { db } from "../db/client";
 import { authenticate } from "../lib/auth";
 import { ApiError } from "../lib/errors";
 import { EMAIL_REGEX } from "../lib/email";
+import { config } from "../lib/config";
 import { getMe, login } from "../services/authService";
+import { createLoginThrottle, type LoginThrottle } from "../services/loginThrottle";
 
 const loginSchema = z.object({
   // No se usa z.string().email(): su regex por defecto es ASCII-only y
@@ -15,7 +17,17 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
-export async function authRoutes(app: FastifyInstance) {
+export async function authRoutes(app: FastifyInstance, opts: { throttle?: LoginThrottle } = {}) {
+  const throttle =
+    opts.throttle ??
+    createLoginThrottle({
+      baseSeconds: config.loginThrottleBaseSeconds,
+      maxSeconds: config.loginThrottleMaxSeconds,
+      ipLimitPerMinute: config.loginIpLimitPerMinute,
+    });
+  throttle.startCleanup();
+  app.addHook("onClose", async () => throttle.stopCleanup());
+
   app.post("/api/auth/login", async (request) => {
     const parsed = loginSchema.safeParse(request.body);
     if (!parsed.success) {
@@ -23,8 +35,17 @@ export async function authRoutes(app: FastifyInstance) {
         { field: "email", message: "Correo o contraseña inválidos" },
       ]);
     }
-    const result = await login(db, parsed.data.email, parsed.data.password);
-    return result;
+    const { email, password } = parsed.data;
+    const wait = throttle.check(request.ip, email);
+    if (wait > 0) throw ApiError.loginRateLimited(wait);
+    try {
+      const result = await login(db, email, password);
+      throttle.recordSuccess(request.ip, email);
+      return result;
+    } catch (err) {
+      if (err instanceof ApiError && err.statusCode === 401) throttle.recordFailure(request.ip, email);
+      throw err;
+    }
   });
 
   app.post("/api/auth/logout", { preHandler: [authenticate] }, async () => {

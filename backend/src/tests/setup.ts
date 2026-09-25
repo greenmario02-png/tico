@@ -25,3 +25,6 @@ process.env.JWT_SECRET = process.env.JWT_SECRET ?? "test_secret_only_for_vitest_
 // propia instancia).
 process.env.DATABASE_URL =
   process.env.DATABASE_URL ?? "postgresql://panaderia:panaderia@localhost:5432/panaderia_dev";
+
+// Los tests de integración comparten IP (127.0.0.1): tope por IP alto para no interferir.
+process.env.LOGIN_IP_LIMIT_PER_MINUTE = process.env.LOGIN_IP_LIMIT_PER_MINUTE ?? "100000";

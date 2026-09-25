@@ -10,11 +10,13 @@ interface Quote {
 }
 export interface ExchangeRate {
   currency: string;
-  official: Quote;
   parallel: Quote | null;
   updatedAt: string;
   stale: boolean;
 }
+
+// Intervalo aleatorio 5-10 min, recalculado en cada ciclo.
+const nextDelay = () => 5 * 60 * 1000 + Math.random() * 5 * 60 * 1000;
 
 function formatTime(iso: string) {
   const d = new Date(iso);
@@ -48,12 +50,26 @@ export function ExchangeRateCard({ compact = false, className }: { compact?: boo
 
   React.useEffect(() => {
     let cancelled = false;
-    api
-      .get<ExchangeRate>("/exchange-rate")
-      .then((r) => !cancelled && setData(r))
-      .catch(() => !cancelled && setFailed(true));
+    const load = () =>
+      api
+        .get<ExchangeRate>("/exchange-rate")
+        .then((r) => {
+          if (cancelled) return;
+          setData(r);
+          setFailed(false);
+        })
+        .catch(() => !cancelled && setFailed(true));
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const schedule = () => {
+      timer = setTimeout(() => {
+        void load().finally(() => !cancelled && schedule());
+      }, nextDelay());
+    };
+    void load();
+    schedule();
     return () => {
       cancelled = true;
+      if (timer) clearTimeout(timer);
     };
   }, []);
 
@@ -75,8 +91,13 @@ export function ExchangeRateCard({ compact = false, className }: { compact?: boo
       </div>
       {data ? (
         <div className="flex flex-col gap-2">
-          <Row label="Oficial" q={data.official} testid="exchange-rate-official" />
-          {data.parallel && <Row label="Paralelo" q={data.parallel} testid="exchange-rate-parallel" />}
+          {data.parallel ? (
+            <Row label="Binance P2P" q={data.parallel} testid="exchange-rate-parallel" />
+          ) : (
+            <p data-testid="exchange-rate-error" className="text-xs text-muted-foreground">
+              Cotización no disponible por ahora.
+            </p>
+          )}
           <span data-testid="exchange-rate-updated" className="text-xs text-muted-foreground">
             Actualizado: {formatTime(data.updatedAt)}
           </span>

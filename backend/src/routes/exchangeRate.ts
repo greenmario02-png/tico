@@ -9,8 +9,6 @@ export async function exchangeRateRoutes(
   const service =
     opts.service ??
     createExchangeRateService({
-      officialBuy: config.officialUsdBuy,
-      officialSell: config.officialUsdSell,
       ttlMinutes: config.exchangeRateTtlMinutes,
     });
   // Público: sin JWT.

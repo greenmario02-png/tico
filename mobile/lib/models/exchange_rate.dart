@@ -15,14 +15,12 @@ class RateQuote {
 
 class ExchangeRate {
   final String currency;
-  final RateQuote official;
   final RateQuote? parallel;
   final DateTime updatedAt;
   final bool stale;
 
   const ExchangeRate({
     required this.currency,
-    required this.official,
     required this.parallel,
     required this.updatedAt,
     required this.stale,
@@ -30,7 +28,6 @@ class ExchangeRate {
 
   factory ExchangeRate.fromJson(Map<String, dynamic> j) => ExchangeRate(
         currency: (j['currency'] ?? 'USD').toString(),
-        official: RateQuote.fromJson(j['official'] as Map<String, dynamic>),
         parallel: j['parallel'] == null ? null : RateQuote.fromJson(j['parallel'] as Map<String, dynamic>),
         updatedAt: DateTime.parse(j['updatedAt'] as String),
         stale: j['stale'] == true,

@@ -1,7 +1,6 @@
 /**
  * Cotización del dólar en Bolivia (GET /api/exchange-rate).
  *
- * - official: valores fijos configurables (BCB).
  * - parallel: Binance P2P USDT/BOB (API NO OFICIAL, puede cambiar sin aviso).
  *   `buy`  = lo que cuesta COMPRAR un dólar (tradeType BUY del usuario).
  *   `sell` = lo que pagan por VENDER un dólar (tradeType SELL).
@@ -22,15 +21,12 @@ export interface ParallelRate {
 
 export interface ExchangeRateResponse {
   currency: "USD";
-  official: { buy: string; sell: string; source: string };
   parallel: ParallelRate | null;
   updatedAt: string;
   stale: boolean;
 }
 
 export interface ExchangeRateOptions {
-  officialBuy: string;
-  officialSell: string;
   ttlMinutes: number;
   fetchFn?: FetchFn;
   now?: () => number;
@@ -81,7 +77,6 @@ export function createExchangeRateService(opts: ExchangeRateOptions) {
   }
 
   async function getRate(): Promise<ExchangeRateResponse> {
-    const official = { buy: opts.officialBuy, sell: opts.officialSell, source: "BCB (oficial)" };
     const t = now();
     let stale = false;
     if (!cache || t - cache.at >= ttlMs) {
@@ -97,7 +92,6 @@ export function createExchangeRateService(opts: ExchangeRateOptions) {
     }
     return {
       currency: "USD",
-      official,
       parallel: cache ? cache.parallel : null,
       updatedAt: new Date(cache ? cache.at : t).toISOString(),
       stale,

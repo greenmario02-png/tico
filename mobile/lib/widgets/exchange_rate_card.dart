@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -13,7 +15,12 @@ class ExchangeRateCard extends StatefulWidget {
 
   /// Inyectable para pruebas; por defecto usa el ApiClient de AuthState.
   final Future<ExchangeRate> Function()? loader;
-  const ExchangeRateCard({super.key, this.compact = false, this.loader});
+  /// Inyectable para pruebas (intervalo aleatorio de refresco).
+  final Random? random;
+  const ExchangeRateCard({super.key, this.compact = false, this.loader, this.random});
+
+  /// Intervalo aleatorio entre 5 y 10 minutos (no un ritmo fijo).
+  static Duration nextRefreshDelay(Random r) => Duration(seconds: 300 + r.nextInt(301));
 
   @override
   State<ExchangeRateCard> createState() => _ExchangeRateCardState();
@@ -22,11 +29,26 @@ class ExchangeRateCard extends StatefulWidget {
 class _ExchangeRateCardState extends State<ExchangeRateCard> {
   ExchangeRate? _rate;
   bool _loading = true;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
+    _schedule();
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  void _schedule() {
+    _timer = Timer(ExchangeRateCard.nextRefreshDelay(widget.random ?? Random()), () async {
+      await _load();
+      if (mounted) _schedule();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -35,6 +57,7 @@ class _ExchangeRateCardState extends State<ExchangeRateCard> {
       final r = await loader();
       if (mounted) setState(() { _rate = r; _loading = false; });
     } catch (_) {
+      // Ante fallo se conserva el último dato si existe.
       if (mounted) setState(() => _loading = false);
     }
   }
@@ -45,9 +68,9 @@ class _ExchangeRateCardState extends State<ExchangeRateCard> {
     final muted = TextStyle(fontSize: 11, color: scheme.onSurfaceVariant);
     final rate = _rate;
     Widget body;
-    if (rate == null) {
+    if (rate == null || rate.parallel == null) {
       body = Text(
-        _loading ? 'Cargando tipo de cambio…' : 'Tipo de cambio no disponible',
+        (_loading && rate == null) ? 'Cargando cotización…' : 'Cotización no disponible por ahora',
         style: muted,
       );
     } else {
@@ -55,11 +78,7 @@ class _ExchangeRateCardState extends State<ExchangeRateCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          _row(context, 'Oficial', rate.official),
-          if (rate.parallel != null) ...[
-            SizedBox(height: widget.compact ? 4 : 8),
-            _row(context, 'Paralelo', rate.parallel!),
-          ],
+          _row(context, 'Binance P2P', rate.parallel!),
           const SizedBox(height: 4),
           Wrap(
             spacing: 8,

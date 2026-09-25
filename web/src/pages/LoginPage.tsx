@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth, getErrorMessage } from "@/lib/auth-context";
+import { AppApiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +21,8 @@ export default function LoginPage() {
   const [pwFocused, setPwFocused] = React.useState(false);
   const [showPw, setShowPw] = React.useState(false);
   const [slow, setSlow] = React.useState(false);
+  const [retryLeft, setRetryLeft] = React.useState(0);
+  const limited = retryLeft > 0;
   const mascotState: MascotState = showPw ? "peek" : pwFocused ? "coverEyes" : "idle";
 
   React.useEffect(() => {
@@ -30,15 +33,32 @@ export default function LoginPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  // Cuenta regresiva viva del 429; se limpia al llegar a 0 o al desmontar.
+  React.useEffect(() => {
+    if (retryLeft <= 0) return;
+    const t = setTimeout(() => setRetryLeft((n) => n - 1), 1000);
+    return () => clearTimeout(t);
+  }, [retryLeft]);
+
+  React.useEffect(() => {
+    if (limited) setError(`Demasiados intentos. Vuelve a intentar en ${retryLeft} s`);
+    else if (retryLeft === 0) setError((e) => (e?.startsWith("Demasiados intentos. Vuelve") ? null : e));
+  }, [retryLeft, limited]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (limited) return;
     setError(null);
     setSubmitting(true);
     const slowTimer = setTimeout(() => setSlow(true), 4000);
     try {
       await login(email, password);
     } catch (err) {
-      setError(getErrorMessage(err));
+      if (err instanceof AppApiError && err.statusCode === 429 && err.retryAfterSeconds) {
+        setRetryLeft(err.retryAfterSeconds);
+      } else {
+        setError(getErrorMessage(err));
+      }
     } finally {
       clearTimeout(slowTimer);
       setSlow(false);
@@ -128,7 +148,7 @@ export default function LoginPage() {
                   <span>Despertando el servidor… puede tardar hasta un minuto la primera vez</span>
                 </p>
               )}
-              <Button type="submit" disabled={submitting} aria-busy={submitting} data-testid="login-submit">
+              <Button type="submit" disabled={submitting || limited} aria-busy={submitting} data-testid="login-submit">
                 {submitting && <Icon name="progress_activity" size={18} className="animate-spin" />}
                 {submitting ? "Ingresando…" : "Ingresar"}
               </Button>

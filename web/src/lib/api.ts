@@ -22,6 +22,8 @@ export class AppApiError extends Error {
   code: string;
   statusCode: number;
   details?: { field: string; message: string }[];
+  /** Segundos de espera (429 LOGIN_RATE_LIMITED). */
+  retryAfterSeconds?: number;
 
   constructor(statusCode: number, code: string, message: string, details?: { field: string; message: string }[]) {
     super(message);
@@ -96,10 +98,18 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
   if (!response.ok) {
     const body = json as ApiErrorBody | null;
-    const message = body?.error?.message ?? "Ocurrió un error inesperado. Intenta de nuevo.";
-    const code = body?.error?.code ?? "INTERNAL_ERROR";
+    // El 429 de login llega plano: {message, code, retryAfterSeconds}.
+    const flat = json as { message?: string; code?: string; retryAfterSeconds?: number } | null;
+    const message = body?.error?.message ?? flat?.message ?? "Ocurrió un error inesperado. Intenta de nuevo.";
+    const code = body?.error?.code ?? flat?.code ?? "INTERNAL_ERROR";
     if (response.status === 401 && onUnauthorized) onUnauthorized();
-    throw new AppApiError(response.status, code, message, body?.error?.details);
+    const err = new AppApiError(response.status, code, message, body?.error?.details);
+    if (response.status === 429) {
+      const hdr = Number(response.headers.get("Retry-After"));
+      const secs = (body?.error as { retryAfterSeconds?: number } | undefined)?.retryAfterSeconds ?? flat?.retryAfterSeconds ?? (Number.isFinite(hdr) && hdr > 0 ? hdr : undefined);
+      if (typeof secs === "number") err.retryAfterSeconds = Math.ceil(secs);
+    }
+    throw err;
   }
 
   return json as T;

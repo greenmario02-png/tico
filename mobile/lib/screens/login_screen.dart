@@ -29,6 +29,8 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _error;
   bool _slow = false;
   Timer? _slowTimer;
+  Timer? _retryTimer;
+  int _retryLeft = 0;
 
   @override
   void initState() {
@@ -42,10 +44,23 @@ class _LoginScreenState extends State<LoginScreen> {
     _passwordCtrl.dispose();
     _passwordFocus.dispose();
     _slowTimer?.cancel();
+    _retryTimer?.cancel();
     super.dispose();
   }
 
+  void _startCountdown(int seconds) {
+    _retryTimer?.cancel();
+    setState(() => _retryLeft = seconds);
+    if (seconds <= 0) return;
+    _retryTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) return t.cancel();
+      setState(() => _retryLeft -= 1);
+      if (_retryLeft <= 0) t.cancel();
+    });
+  }
+
   Future<void> _submit() async {
+    if (_retryLeft > 0) return;
     if (!_formKey.currentState!.validate()) return;
     setState(() {
       _loading = true;
@@ -62,7 +77,11 @@ class _LoginScreenState extends State<LoginScreen> {
         _passwordCtrl.text,
       );
     } on ApiException catch (e) {
-      setState(() => _error = e.message);
+      if (e.statusCode == 429 && e.retryAfterSeconds != null && e.retryAfterSeconds! > 0) {
+        _startCountdown(e.retryAfterSeconds!);
+      } else {
+        setState(() => _error = e.message);
+      }
     } catch (_) {
       setState(
         () =>
@@ -185,12 +204,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                     style: TextStyle(color: scheme.onSurfaceVariant),
                                   ),
                                 ),
-                              ErrorBanner(message: _error),
+                              ErrorBanner(
+                                message: _retryLeft > 0
+                                    ? 'Demasiados intentos. Vuelve a intentar en $_retryLeft s'
+                                    : _error,
+                              ),
                               const SizedBox(height: 16),
                               SizedBox(
                                 height: 52,
                                 child: FilledButton(
-                                  onPressed: _loading ? null : _submit,
+                                  onPressed: (_loading || _retryLeft > 0) ? null : _submit,
                                   child: _loading
                                       ? SizedBox(
                                           height: 22,

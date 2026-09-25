@@ -10,10 +10,21 @@ class ApiException implements Exception {
   final String message;
   final List<Map<String, dynamic>>? details;
 
-  ApiException(this.statusCode, this.code, this.message, [this.details]);
+  /// Segundos de espera (429 LOGIN_RATE_LIMITED).
+  final int? retryAfterSeconds;
+
+  ApiException(this.statusCode, this.code, this.message, [this.details, this.retryAfterSeconds]);
 
   @override
   String toString() => message;
+}
+
+/// Segundos de espera: prioriza el cuerpo, si no la cabecera Retry-After.
+int? parseRetryAfter(Object? body, String? header) {
+  final b = body is num ? body.toInt() : int.tryParse('${body ?? ''}');
+  if (b != null && b >= 0) return b;
+  final h = int.tryParse(header ?? '');
+  return (h != null && h >= 0) ? h : null;
 }
 
 typedef TokenProvider = String? Function();
@@ -49,7 +60,8 @@ class ApiClient {
     final data = response.data;
     Map<String, dynamic>? error;
     if (data is Map<String, dynamic>) {
-      error = data['error'] as Map<String, dynamic>?;
+      final e2 = data['error'];
+      error = e2 is Map<String, dynamic> ? e2 : data; // 429 llega plano
     }
     final message = error?['message'] as String? ?? 'Ocurrió un error inesperado. Intenta de nuevo.';
     final code = error?['code'] as String? ?? 'INTERNAL_ERROR';
@@ -57,7 +69,11 @@ class ApiClient {
     if (response.statusCode == 401) {
       onUnauthorized?.call();
     }
-    return ApiException(response.statusCode ?? 0, code, message, details);
+    int? retry;
+    if (response.statusCode == 429) {
+      retry = parseRetryAfter(error?['retryAfterSeconds'], response.headers.value('retry-after'));
+    }
+    return ApiException(response.statusCode ?? 0, code, message, details, retry);
   }
 
   Future<T> get<T>(String path,

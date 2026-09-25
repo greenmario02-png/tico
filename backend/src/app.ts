@@ -17,7 +17,7 @@ import { saleRoutes } from "./routes/sales";
 import { supplierRoutes } from "./routes/suppliers";
 
 export async function buildApp(): Promise<FastifyInstance> {
-  const app = Fastify({ logger: process.env.VITEST !== "true" });
+  const app = Fastify({ logger: process.env.VITEST !== "true", trustProxy: config.trustProxy });
 
   // CORS_ORIGIN admite varios orígenes separados por coma.
   const corsOrigins = config.corsOrigin
@@ -37,6 +37,7 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof ApiError) {
+      if (error.retryAfterSeconds !== undefined) reply.header("Retry-After", String(error.retryAfterSeconds));
       reply.code(error.statusCode).send(error.toBody());
       return;
     }

@@ -7,7 +7,8 @@ export type ErrorCode =
   | "INSUFFICIENT_STOCK"
   | "BATCH_OVERSELLING"
   | "INTERNAL_ERROR"
-  | "TOKEN_EXPIRED";
+  | "TOKEN_EXPIRED"
+  | "LOGIN_RATE_LIMITED";
 
 export interface ErrorDetail {
   field: string;
@@ -18,6 +19,7 @@ export class ApiError extends Error {
   code: ErrorCode;
   statusCode: number;
   details?: ErrorDetail[];
+  retryAfterSeconds?: number;
 
   constructor(statusCode: number, code: ErrorCode, message: string, details?: ErrorDetail[]) {
     super(message);
@@ -32,10 +34,20 @@ export class ApiError extends Error {
         code: this.code,
         message: this.message,
         ...(this.details ? { details: this.details } : {}),
+        ...(this.retryAfterSeconds !== undefined ? { retryAfterSeconds: this.retryAfterSeconds } : {}),
       },
     };
   }
 
+  static loginRateLimited(retryAfterSeconds: number) {
+    const e = new ApiError(
+      429,
+      "LOGIN_RATE_LIMITED",
+      `Demasiados intentos. Espera ${retryAfterSeconds} segundos e inténtalo de nuevo.`,
+    );
+    e.retryAfterSeconds = retryAfterSeconds;
+    return e;
+  }
   static validation(message: string, details?: ErrorDetail[]) {
     return new ApiError(400, "VALIDATION_ERROR", message, details);
   }
