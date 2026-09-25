@@ -7,6 +7,7 @@ import { ApiError } from "./lib/errors";
 import { authRoutes } from "./routes/auth";
 import { batchRoutes } from "./routes/batches";
 import { categoryRoutes } from "./routes/categories";
+import { exchangeRateRoutes } from "./routes/exchangeRate";
 import { ingredientRoutes } from "./routes/ingredients";
 import { inventoryRoutes } from "./routes/inventory";
 import { productRoutes } from "./routes/products";
@@ -55,6 +56,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(saleRoutes);
   await app.register(inventoryRoutes);
   await app.register(reportRoutes);
+  await app.register(exchangeRateRoutes);
 
   app.get("/api/health", async () => ({ status: "ok" }));
 

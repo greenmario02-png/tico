@@ -8,6 +8,7 @@ class AuthApi {
   Future<LoginResult> login(String email, String password) => client.post(
         '/auth/login',
         body: {'email': email, 'password': password},
+        timeout: const Duration(seconds: 90),
         parse: (d) => LoginResult.fromJson(d as Map<String, dynamic>),
       );
 

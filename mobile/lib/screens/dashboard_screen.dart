@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/exchange_rate_card.dart';
 import 'package:provider/provider.dart';
 import '../api/endpoints.dart';
 import '../models/models.dart';
@@ -128,6 +129,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Text('Hola, ${user.name.split(' ').first}', style: Theme.of(context).textTheme.headlineSmall),
             Text('Rol: ${user.role}', style: TextStyle(color: scheme.onSurfaceVariant)),
+            const SizedBox(height: 16),
+            const ExchangeRateCard(),
             const SizedBox(height: 16),
             if (user.role == 'dueño') _profitabilityCard(),
             if (user.role == 'dueño') const SizedBox(height: 16),

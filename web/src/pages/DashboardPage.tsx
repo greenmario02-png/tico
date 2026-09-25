@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import type { Batch, Ingredient, Paginated, ProfitabilityReport } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ExchangeRateCard } from "@/components/ExchangeRateCard";
 import { Icon } from "@/components/Icon";
 import { EmptyState } from "@/components/EmptyState";
 import { cn } from "@/lib/utils";
@@ -140,6 +141,7 @@ export default function DashboardPage() {
           value={recentBatches === null ? "…" : String(recentBatches.length)}
           hint="Últimos producidos"
         />
+        <ExchangeRateCard />
         {(user.role === "admin" || user.role === "operario") && (
           <StatCard
             icon="warning"

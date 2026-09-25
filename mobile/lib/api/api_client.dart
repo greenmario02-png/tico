@@ -25,7 +25,7 @@ class ApiClient {
 
   ApiClient({TokenProvider? tokenProvider})
       : tokenProvider = tokenProvider,
-        _dio = Dio(BaseOptions(baseUrl: apiBaseUrl, connectTimeout: const Duration(seconds: 15))) {
+        _dio = Dio(BaseOptions(baseUrl: apiBaseUrl, connectTimeout: const Duration(seconds: 90))) {
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) {
         final token = this.tokenProvider?.call();
@@ -36,6 +36,10 @@ class ApiClient {
       },
     ));
   }
+
+  /// Timeouts por petición (p. ej. login ~90 s por el arranque en frío del
+  /// servidor gratuito). Sin valor, se usan los del cliente.
+  Options? _opts(Duration? t) => t == null ? null : Options(receiveTimeout: t, sendTimeout: t);
 
   ApiException _toApiException(DioException e) {
     final response = e.response;
@@ -56,18 +60,19 @@ class ApiClient {
     return ApiException(response.statusCode ?? 0, code, message, details);
   }
 
-  Future<T> get<T>(String path, {Map<String, dynamic>? query, required T Function(dynamic) parse}) async {
+  Future<T> get<T>(String path,
+      {Map<String, dynamic>? query, Duration? timeout, required T Function(dynamic) parse}) async {
     try {
-      final res = await _dio.get(path, queryParameters: _cleanQuery(query));
+      final res = await _dio.get(path, queryParameters: _cleanQuery(query), options: _opts(timeout));
       return parse(res.data);
     } on DioException catch (e) {
       throw _toApiException(e);
     }
   }
 
-  Future<T> post<T>(String path, {Object? body, required T Function(dynamic) parse}) async {
+  Future<T> post<T>(String path, {Object? body, Duration? timeout, required T Function(dynamic) parse}) async {
     try {
-      final res = await _dio.post(path, data: body);
+      final res = await _dio.post(path, data: body, options: _opts(timeout));
       return parse(res.data);
     } on DioException catch (e) {
       throw _toApiException(e);

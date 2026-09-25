@@ -35,6 +35,8 @@ interface RequestOptions {
   method?: "GET" | "POST" | "PUT" | "DELETE";
   body?: unknown;
   query?: Record<string, string | number | boolean | undefined | null>;
+  /** Timeout en ms (por defecto sin límite propio). */
+  timeoutMs?: number;
 }
 
 function buildUrl(path: string, query?: RequestOptions["query"]) {
@@ -63,14 +65,22 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
 
   let response: Response;
+  const controller = options.timeoutMs ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), options.timeoutMs) : null;
   try {
     response = await fetch(buildUrl(path, options.query), {
       method: options.method ?? "GET",
       headers,
       body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      signal: controller?.signal,
     });
   } catch {
-    throw new AppApiError(0, "NETWORK_ERROR", "No se pudo conectar con el servidor. Revisa tu conexión.");
+    if (controller?.signal.aborted) {
+      throw new AppApiError(0, "TIMEOUT", "El servidor tardó demasiado en responder. Intenta de nuevo en unos segundos.");
+    }
+    throw new AppApiError(0, "NETWORK_ERROR", "No se pudo conectar con el servidor. Revisa tu conexión o intenta de nuevo en un momento.");
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 
   if (response.status === 204) {
@@ -120,7 +130,7 @@ export async function fetchAllPages<T>(path: string, query: RequestOptions["quer
 
 export const api = {
   get: <T>(path: string, query?: RequestOptions["query"]) => apiRequest<T>(path, { method: "GET", query }),
-  post: <T>(path: string, body?: unknown) => apiRequest<T>(path, { method: "POST", body }),
+  post: <T>(path: string, body?: unknown, timeoutMs?: number) => apiRequest<T>(path, { method: "POST", body, timeoutMs }),
   put: <T>(path: string, body?: unknown) => apiRequest<T>(path, { method: "PUT", body }),
   delete: <T>(path: string) => apiRequest<T>(path, { method: "DELETE" }),
 };

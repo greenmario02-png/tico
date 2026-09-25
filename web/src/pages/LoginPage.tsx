@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Icon } from "@/components/Icon";
 import { BakerMascot, type MascotState } from "@/components/mascot/BakerMascot";
+import { ExchangeRateCard } from "@/components/ExchangeRateCard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 export default function LoginPage() {
@@ -18,6 +19,7 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = React.useState(false);
   const [pwFocused, setPwFocused] = React.useState(false);
   const [showPw, setShowPw] = React.useState(false);
+  const [slow, setSlow] = React.useState(false);
   const mascotState: MascotState = showPw ? "peek" : pwFocused ? "coverEyes" : "idle";
 
   React.useEffect(() => {
@@ -32,11 +34,14 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
+    const slowTimer = setTimeout(() => setSlow(true), 4000);
     try {
       await login(email, password);
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
+      clearTimeout(slowTimer);
+      setSlow(false);
       setSubmitting(false);
     }
   }
@@ -113,12 +118,24 @@ export default function LoginPage() {
                   {error}
                 </p>
               )}
-              <Button type="submit" disabled={submitting} data-testid="login-submit">
+              {slow && (
+                <p
+                  role="status"
+                  data-testid="login-waking"
+                  className="flex items-start gap-2 rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground"
+                >
+                  <Icon name="bedtime" size={18} className="mt-0.5 shrink-0" />
+                  <span>Despertando el servidor… puede tardar hasta un minuto la primera vez</span>
+                </p>
+              )}
+              <Button type="submit" disabled={submitting} aria-busy={submitting} data-testid="login-submit">
+                {submitting && <Icon name="progress_activity" size={18} className="animate-spin" />}
                 {submitting ? "Ingresando…" : "Ingresar"}
               </Button>
             </form>
           </CardContent>
           </Card>
+          <ExchangeRateCard compact className="w-full" />
         </div>
       </div>
     </div>

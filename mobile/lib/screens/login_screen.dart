@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import '../widgets/exchange_rate_card.dart';
 import 'package:provider/provider.dart';
 
 import '../api/api_client.dart';
@@ -25,6 +27,8 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscure = true;
   bool _loading = false;
   String? _error;
+  bool _slow = false;
+  Timer? _slowTimer;
 
   @override
   void initState() {
@@ -37,6 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     _passwordFocus.dispose();
+    _slowTimer?.cancel();
     super.dispose();
   }
 
@@ -44,7 +49,12 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() {
       _loading = true;
+      _slow = false;
       _error = null;
+    });
+    _slowTimer?.cancel();
+    _slowTimer = Timer(const Duration(seconds: 4), () {
+      if (mounted && _loading) setState(() => _slow = true);
     });
     try {
       await context.read<AuthState>().login(
@@ -59,7 +69,13 @@ class _LoginScreenState extends State<LoginScreen> {
             _error = 'No se pudo conectar con el servidor. Revisa tu conexión.',
       );
     } finally {
-      if (mounted) setState(() => _loading = false);
+      _slowTimer?.cancel();
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _slow = false;
+        });
+      }
     }
   }
 
@@ -159,6 +175,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                     : null,
                                 onFieldSubmitted: (_) => _submit(),
                               ),
+                              if (_slow)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 12),
+                                  child: Text(
+                                    'Despertando el servidor… puede tardar hasta un minuto la primera vez',
+                                    key: const Key('login-slow-notice'),
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(color: scheme.onSurfaceVariant),
+                                  ),
+                                ),
                               ErrorBanner(message: _error),
                               const SizedBox(height: 16),
                               SizedBox(
@@ -180,7 +206,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ),
                                 ),
                               ),
-                              const SizedBox(height: 24),
+                              const SizedBox(height: 16),
+                              const ExchangeRateCard(compact: true),
+                              const SizedBox(height: 16),
                             ],
                           ),
                         ),
