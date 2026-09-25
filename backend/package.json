@@ -6,7 +6,7 @@
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
     "db:migrate:prod": "node dist/db/migrate.js",
-    "start:render": "node dist/db/migrate.js && (node dist/db/seed-prod.js || echo seed-prod omitido) && node dist/server.js",
+    "start:render": "node dist/db/migrate.js && ([ \"$RUN_SEED\" = \"true\" ] && node dist/db/seed-prod.js || true) && node dist/server.js",
     "build": "tsc -p tsconfig.json",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
